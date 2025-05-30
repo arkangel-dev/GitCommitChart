@@ -19,7 +19,7 @@ if __name__ == "__main__":
     image = create_git_commit_chart(data, rows_per_column=7)
     image.save("test.png")
 ```
-![alt text](image-1.png)
+![alt text](docs/image-1.png)
 
 Create a chart with labels
 ```py
@@ -41,4 +41,4 @@ if __name__ == "__main__":
     image.save("test.png")
 
 ```
-![alt text](test.png)
+![alt text](docs/image-2.png)

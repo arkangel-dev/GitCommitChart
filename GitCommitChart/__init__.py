@@ -30,18 +30,18 @@ def create_git_commit_chart(
     tile_border_color="#ffffff1f",
     label_color="#ffffff",
     border_radius=5,
-    tile_size=40,
+    tile_size=30,
     rows_per_column=7,
-    inner_padding=15,
-    outer_vertical_padding=75,
-    outer_horizontal_padding=50,
+    inner_padding=10,
+    outer_vertical_padding=45,
+    outer_horizontal_padding=45,
     horizontal_labels:List[str]=[],
     vertical_labels:List[str]=[],
     horizontal_label_spacing_nth:None | int=None,
     vertical_label_spacing_nth:None | int=None,
-    vertical_label_gap=20,
-    horizontal_label_gap=20,
-    label_font_size=50,
+    vertical_label_gap:None | int=None,
+    horizontal_label_gap:None | int=None,
+    label_font_size=30,
     label_font_file: None | str = None,
     skip: int = 0
 ) -> ImageType:
@@ -75,6 +75,10 @@ def create_git_commit_chart(
     Returns:
         ImageType: Image object containing the contribution chart.
     """
+    if not vertical_label_gap:
+        vertical_label_gap = 20 if vertical_labels else 0
+    if not horizontal_label_gap :
+        horizontal_label_gap = 20 if horizontal_labels else 0
 
     if not label_font_file:
         label_font_file = f"{os.path.dirname(os.path.realpath(__file__))}/segoeuithis.ttf"
@@ -85,12 +89,16 @@ def create_git_commit_chart(
 
     # Calculate label sizes for padding
     font_height = _calculate_text_size("A", font)[3] - _calculate_text_size("A", font)[1]
-    largest_vertical_label_width = max(
-        _calculate_text_size(label, font)[2] for label in vertical_labels
-    ) if vertical_labels else 0
-    largest_horizontal_label_height = max(
-        _calculate_text_size(label, font)[3] - _calculate_text_size(label, font)[1] for label in horizontal_labels
-    ) if horizontal_labels else 0
+    
+
+
+    horizontal_label_font_height = font_height if horizontal_labels else 0
+
+    _label_data = [_calculate_text_size(label, font)[2] for label in vertical_labels]
+    largest_vertical_label_width = max(_label_data) if vertical_labels else 0
+    shortest_vertical_label_width = min(_label_data) if horizontal_labels else 0
+
+    diff = largest_vertical_label_width - shortest_vertical_label_width
 
     # Calculate the number of columns needed
     size = len(data) + skip
@@ -105,24 +113,26 @@ def create_git_commit_chart(
         num_columns * tile_size
         + total_horizontal_inner_gap
         + 2 * outer_horizontal_padding
-        + largest_vertical_label_width
         + vertical_label_gap
+        + largest_vertical_label_width 
+        + diff
     )
 
     total_height = (
         rows_per_column * tile_size
         + total_vertical_inner_gap
         + 2 * outer_vertical_padding
-        + largest_horizontal_label_height
+        + (font_height if horizontal_labels else 0)
         + horizontal_label_gap
+        + horizontal_label_font_height
     )
 
     # Calculate label spacings if not provided
-    if not horizontal_label_spacing_nth:
-        horizontal_label_spacing_nth = num_columns  // len(horizontal_labels) + 1
+    if not horizontal_label_spacing_nth and horizontal_labels:
+        horizontal_label_spacing_nth = num_columns  // len(horizontal_labels)
 
-    if not vertical_label_spacing_nth:
-        vertical_label_spacing_nth = rows_per_column // len(vertical_labels) + 1
+    if not vertical_label_spacing_nth and vertical_labels:
+        vertical_label_spacing_nth = rows_per_column // len(vertical_labels)
 
     # Create a new image with the specified background color
     image = Image.new("RGBA", (total_width, total_height), background_color)
@@ -142,12 +152,14 @@ def create_git_commit_chart(
             + largest_vertical_label_width
             + vertical_label_gap
             + column * (tile_size + inner_padding)
+            + diff
         )
         y = (
             outer_vertical_padding
-            + largest_horizontal_label_height
+            + ( font_height if horizontal_labels else 0)
             + horizontal_label_gap
             + row * (tile_size + inner_padding)
+            + horizontal_label_font_height
         )
         tile_draw.rounded_rectangle(
             [x, y, x + tile_size, y + tile_size],
@@ -177,12 +189,14 @@ def create_git_commit_chart(
             + largest_vertical_label_width
             + vertical_label_gap
             + column * (tile_size + inner_padding)
+            + diff
         )
         y = (
             outer_vertical_padding
-            + largest_horizontal_label_height
+            + (font_height if vertical_labels else 0)
             + horizontal_label_gap
             + row * (tile_size + inner_padding)
+            + horizontal_label_font_height
         )
 
         # Interpolate the color based on the normalized value
@@ -218,8 +232,13 @@ def create_git_commit_chart(
                 + largest_vertical_label_width
                 + vertical_label_gap
                 + col * (tile_size + inner_padding)
+                + diff
             )
-            y = outer_vertical_padding + (font_height / 2) - horizontal_label_gap
+            y = (
+                outer_vertical_padding 
+                + (font_height / 2) - horizontal_label_gap
+                + horizontal_label_font_height
+            )
             label_draw.text(
                 (x, y),
                 horizontal_labels[label_idx],
@@ -234,12 +253,13 @@ def create_git_commit_chart(
             if label_idx >= len(vertical_labels):
                 break
 
-            x = outer_horizontal_padding - vertical_label_gap 
+            x = outer_horizontal_padding - vertical_label_gap + diff
             y = (
                 outer_vertical_padding
                 + (font_height / 2)
-                + (largest_horizontal_label_height + horizontal_label_gap)
+                + (font_height + horizontal_label_gap)
                 + row * (tile_size + inner_padding)
+                + horizontal_label_font_height
             )
             label_draw.text(
                 (x, y),

@@ -1,9 +1,3 @@
-# GitCommitChart
-![alt text](image-1.png)
-
-This is a small python library that uses PIL to generate Github commit charts dynamically. Its very cool. Here is an example on how to use it
-
-```py
 from GitCommitChart import create_git_commit_chart
 import random
 
@@ -16,4 +10,3 @@ if __name__ == "__main__":
     # Create the Git commit chart
     image = create_git_commit_chart(data, rows_per_column=7)
     image.save("test.png")
-```

@@ -28,6 +28,7 @@ def create_git_commit_chart(
     background_color="#0d1117",
     tile_background_color="#151b23",
     tile_border_color="#ffffff1f",
+    label_color="#ffffff",
     border_radius=5,
     tile_size=40,
     rows_per_column=7,
@@ -35,16 +36,45 @@ def create_git_commit_chart(
     outer_vertical_padding=75,
     outer_horizontal_padding=50,
     horizontal_labels:List[str]=[],
+    vertical_labels:List[str]=[],
     horizontal_label_spacing_nth:None | int=None,
     vertical_label_spacing_nth:None | int=None,
     vertical_label_gap=20,
     horizontal_label_gap=20,
-    vertical_labels:List[str]=[],
     label_font_size=50,
     label_font_file: None | str = None,
-    label_color="#ffffff",
+    skip: int = 0
 ) -> ImageType:
-    
+    """Create a Github contribution chart image.
+    This function generates a contribution chart similar to the one seen on GitHub profiles.
+
+    Args:
+        data (List[int]): An array of integers
+        tile_end_color (str, optional): The start range of the color for the tiles. Defaults to "#56d364".
+        tile_start_color (str, optional): The end range of the color for the tiles. Defaults to "#033a16".
+        background_color (str, optional): The background color of the image. Defaults to "#0d1117".
+        tile_background_color (str, optional): The background color of the tile. Defaults to "#151b23".
+        tile_border_color (str, optional): The border color of the tile. Defaults to "#ffffff1f".
+        label_color (str, optional): The label color. Defaults to "#ffffff".
+        border_radius (int, optional): Border radius of the tiles. Defaults to 5.
+        tile_size (int, optional): The size of the tiles. Defaults to 40.
+        rows_per_column (int, optional): Number of rows to split the data into. Defaults to 7.
+        inner_padding (int, optional): The inner padding between tiles. Defaults to 15.
+        outer_vertical_padding (int, optional): The outer vertical padding. Defaults to 75.
+        outer_horizontal_padding (int, optional): The outer horizontal padding. Defaults to 50.
+        horizontal_labels (List[str], optional): The horizontal labels to display. Will be spread evenly. Defaults to [].
+        vertical_labels (List[str], optional): Vertical labels to display. Defaults to [].
+        horizontal_label_spacing_nth (None | int, optional): The amount of tiles to gap between the horizontal labels.
+        vertical_label_spacing_nth (None | int, optional): The amount of tiles to gap between the vertical labels. Defaults to None.
+        vertical_label_gap (int, optional): The gap between the vertical label and the chart. Defaults to 20.
+        horizontal_label_gap (int, optional): The gap between the horizontal label and the chart. Defaults to 20.
+        label_font_size (int, optional): The font size. Defaults to 50.
+        label_font_file (None | str, optional): The font file to use. Expects ttf. Defaults to Segoe UI.
+        skip (int, optional): Number of tiles to offset at the start of the chart. Defaults to 0.
+
+    Returns:
+        ImageType: Image object containing the contribution chart.
+    """
 
     if not label_font_file:
         label_font_file = f"{os.path.dirname(os.path.realpath(__file__))}/segoeuithis.ttf"
@@ -63,7 +93,7 @@ def create_git_commit_chart(
     ) if horizontal_labels else 0
 
     # Calculate the number of columns needed
-    size = len(data)
+    size = len(data) + skip
     num_columns = (size + rows_per_column - 1) // rows_per_column
 
     # Calculate total inner gap
@@ -101,7 +131,10 @@ def create_git_commit_chart(
 
     # Draw the background tiles and 
     # blend it with the image
+    
     for i in range(size):
+        if i < skip:
+            continue
         row = i % rows_per_column
         column = i // rows_per_column
         x = (
@@ -134,7 +167,9 @@ def create_git_commit_chart(
     # and blend it with the image
     data_layer = Image.new("RGBA", (total_width, total_height), (0, 0, 0, 0))
     data_draw = ImageDraw.Draw(data_layer)
-    for i, value in enumerate(normalized_data):
+    for i in range(len(normalized_data) + skip):
+        if i < skip: continue
+        value = normalized_data[i - skip]
         row = i % rows_per_column
         column = i // rows_per_column
         x = (
@@ -214,6 +249,4 @@ def create_git_commit_chart(
                 anchor="lm"
             )
     image = Image.alpha_composite(image, label_layer)
-    
     return image
-
